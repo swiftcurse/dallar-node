@@ -10,7 +10,7 @@ const request = require('request');
 const nrc = require('node-run-cmd');
 
 const {app, BrowserWindow, Menu, ipcMain} = electron;
-
+//test
 // mining var
 
 var miningUser = ' -u bf-az.donate'
