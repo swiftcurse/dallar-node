@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Dallar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-wrapper">
+            <a class="brand-logo center">Dallar</a>
+        </div>
+    </nav>
+    <div id="system:info">System<br>
+        CPU :<br>
+        
+        <div id="system:info:cpu"></div><br>
+        <div id="system:info:graphics"></div><br>
+        <div id="system:info:networkInterfaces"></div><br>
+        <div id="system:info:currentLoad"></div>
+    </div>
+    
+    <ul ></ul>
+    <form  id="startMining">
+        <button class="btn waves-effect waves-light" type="submit">Start Mining</button>
+    </form>
+    <script>
+        const startMining = document.querySelector('#startMining');
+        startMining.addEventListener('submit', submitForm);
+
+        function submitForm(e){
+            e.preventDefault();
+            ipcRenderer.send('startMining');
+        }
+    </script>
+
+    <script>
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+        const ul = document.querySelector('ul');
+        const br = document.createElement('br');
+        //https://www.npmjs.com/package/systeminformation
+        //add system:info:cpu
+        ipcRenderer.on('system:info:cpu', function(e, data){
+            const container = document.getElementById('system:info:cpu');
+            var itemText = document.createTextNode('Manufacturer: ' + data.manufacturer); container.appendChild(itemText);
+            itemText = document.createTextNode(' Brand: ' + data.brand); container.appendChild(itemText);
+            itemText = document.createTextNode(' Cores: ' + data.cores); container.appendChild(itemText); 
+        });
+        //add system:info:graphics 
+        ipcRenderer.on('system:info:graphics', function(e, data){
+            const container = document.getElementById('system:info:graphics');
+            var itemText = document.createTextNode('Vendor: ' + data.controllers[0].vendor); container.appendChild(itemText);
+            itemText = document.createTextNode(' Model: ' + data.controllers[0].model); container.appendChild(itemText);
+            itemText = document.createTextNode(' Vram: ' + data.controllers[0].vram + ' Mb'); container.appendChild(itemText);
+        });
+        //add system:info:networkInterfaces
+        ipcRenderer.on('system:info:networkInterfaces', function(e, data){
+            const container = document.getElementById('system:info:networkInterfaces');
+            var itemText = document.createTextNode('iFace: ' + data[0].iface); container.appendChild(itemText);
+            itemText = document.createTextNode(' MAC: ' + data[0].mac); container.appendChild(itemText);
+            itemText = document.createTextNode(' Public IP: ' + data[0].ip4); container.appendChild(itemText);
+        });
+        //add system:info:currentLoad
+        ipcRenderer.on('system:info:currentLoad', function(e, data){
+            const container = document.getElementById('system:info:currentLoad');
+            var itemText = document.createTextNode('CPU Ussage: ' + data.currentload.toFixed(2) + '%'); container.appendChild(itemText);
+            itemText = document.createTextNode(' CPU avgload: ' + data.avgload.toFixed(2)); container.appendChild(itemText);
+        });
+
+        //add item system:info
+        ipcRenderer.on('item:add', function(e, item){
+            ul.className = 'collection'
+            const li = document.createElement('li');
+            li.className = 'collection-item';
+            const itemText = document.createTextNode(item);
+            li.appendChild(itemText);
+            ul.appendChild(li);
+        });
+
+        //clear items
+        ipcRenderer.on('item:clear', function(){
+            ul.innerHTML = '';
+            ul.className = '';
+        });
+
+        //remove item
+        ul.addEventListener('dblclick', removeItem)
+        function removeItem(e){
+            e.target.remove();
+            if(ul.children == 0){
+                ul.className = '';
+            };
+        };
+    </script>
+</body>
+</html>
