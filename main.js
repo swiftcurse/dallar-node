@@ -1,4 +1,4 @@
-const simpleGit = require('simple-git')(__dirname+'/git');
+
 const pathWinCcminerX86 = 'https://github.com/tpruvot/ccminer/releases/download/2.2.3-tpruvot/ccminer-x86-2.2.3-cuda9.7z';
 
 const electron = require('electron');

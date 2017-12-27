@@ -11,9 +11,6 @@ pids
 *.seed
 *.pid.lock
 
-#no custom vscode settings
-.vscode
-
 #Release Builds
 release-builds
 
@@ -66,3 +63,4 @@ typings/
 # dotenv environment variables file
 .env
 
+package-lock.json
