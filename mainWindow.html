@@ -20,7 +20,7 @@
                 <strong>Brand:</strong><br><li id="systemInfoCpuBrand"></li>
                 <strong>Cores:</strong><br><li id="systemInfoCpuCores"></li>
             </ul>
-        </div><br>
+        </div>
         <div class="grid grid2" id="systemInfoGraphics">
                 System Graphics
                 <ul>
@@ -28,7 +28,7 @@
                     <strong>Model:</strong><br><li id="systemInfoGraphicsModel"></li>
                     <strong>VRAM:</strong><br><li id="systemInfoGraphicsVram"></li>
                 </ul>
-        </div><br>
+        </div>
         <div class="grid grid3" id="systemInfoNetworkInterfaces">
             System Network
             <ul>
@@ -36,7 +36,25 @@
                 <strong>MAC: </strong><br><li id="systemInfoNetworkInterfacesMac"></li>
                 <strong>IP:</strong><br><li id="systemInfoNetworkInterfacesIp"></li>
             </ul>
-        </div><br>
+        </div>
+        <div class="grid grid4" id="poolInfo">
+            Miner Pool
+            <form id="mining">
+                <div>
+                    Mining Settings
+                    <label >User: </label>
+                    <input type="text" id="miningUser" autofocus value="test">
+                    <label >User PassWord: </label>
+                    <input type="text" id="miningUserPw" autofocus value="test">
+    
+                    <label >Pool: </label>
+                    <input type="text" id="miningPool" value="stratum+tcp://pool.dallar.org:8080">
+                    
+                    <label >Algo: </label>
+                    <input type="text" id="miningAlgo" value="groestl">
+                </div>
+            </form>
+        </div>
     </div>
     <div >
             <strong>CPU Stats</strong><br> 
@@ -72,9 +90,15 @@
         const startMining = document.querySelector('#startMining');
         startMining.addEventListener('submit', submitForm);
 
+        var miningData = [  
+            document.querySelector('#miningUser').value.toString(),
+            document.querySelector('#miningPool').value.toString(),
+            document.querySelector('#miningAlgo').value.toString(),
+            document.querySelector('#miningUserPw').value.toString()
+        ];
         function submitForm(e){
             e.preventDefault();
-            ipcRenderer.send('startMining');
+            ipcRenderer.send('startMining',miningData);
         }
     </script>
 

@@ -1,5 +1,7 @@
 
 const pathWinCcminerX86 = 'https://github.com/tpruvot/ccminer/releases/download/2.2.3-tpruvot/ccminer-x86-2.2.3-cuda9.7z';
+const pathWinCcminerX64 = 'https://github.com/tpruvot/ccminer/releases/download/2.2.3-tpruvot/ccminer-x64-2.2.3-cuda9.7z';
+var ccminerPath = '';
 
 const electron = require('electron');
 const url = require('url');
@@ -9,7 +11,8 @@ const fs = require('fs');
 const request = require('request');
 const nrc = require('node-run-cmd');
 
-const {app, BrowserWindow, Menu, ipcMain} = electron;
+const app = electron.app;
+const { BrowserWindow, Menu, ipcMain} = electron;
 
 // mining var
 
@@ -17,11 +20,18 @@ var miningUser = ' -u bf-az.donate'
 var miningPool = ' -o stratum+tcp://us-east.stratum.slushpool.com:3333';
 var miningAlgo = ' -a sha256';
 
+//system var
+global.sysGpuVendor ='';
+global.sysPlatform = '';
+global.sysPlatformArch = '';
+
+
 // SET ENV
 process.env.NODE_ENV = 'Dev';//production
 
 let mainWindow,addWindow;
 let { zip, unzip } = require('cross-unzip');
+console.log(require.resolve('electron'));
 
 //listen for app to be ready
 app.on('ready', function(){
@@ -36,7 +46,50 @@ app.on('ready', function(){
 
     //get CCminer
     //downloadFromInternet(pathWinCcminerX86,__dirname+'/miners/ccminer/','ccminer.7z');//unzips
+    
+    //initiate getting SystemStat data
+    setTimeout(getSystemStats, 1000);
+    setTimeout(getSystemInfo, 1000);
+    setTimeout(initialSetup, 3000);
 });
+
+function initialSetup(){
+
+//set up file structure
+    if (!fs.existsSync(__dirname+'/miners/')){
+        fs.mkdirSync(__dirname+'/miners/');
+    }else
+    {
+        console.log("Directory already exist");
+    }
+    if (!fs.existsSync(__dirname+'/miners/ccminer/')){
+        fs.mkdirSync(__dirname+'/miners/ccminer/');
+    }else
+    {
+        console.log("Directory already exist");
+    }
+
+    //download required miners
+    console.log(sysPlatform +' '+ sysGpuVendor +' '+ sysPlatformArch)
+
+    if (sysPlatform == 'Windows'){
+        if( sysGpuVendor == 'NVIDIA'){
+            if( sysPlatformArch == 'x64'){
+                downloadFromInternet(pathWinCcminerX64,__dirname+'/miners/ccminer/','ccminer.7z');//unzips
+                ccminerPath = __dirname+'\\miners\\ccminer\\ccminer-x64.exe'
+            }else if(sysPlatformArch == 'x32'){
+                downloadFromInternet(pathWinCcminerX32,__dirname+'/miners/ccminer/','ccminer.7z');//unzips
+                ccminerPath = __dirname+'\\miners\\ccminer\\ccminer.exe'
+            }
+        }
+    }
+    if (sysPlatform == 'Darwin'){//Mac
+        
+    }
+    if (sysPlatform == 'Linux'){
+        
+    }
+}
 
 //Handle create Main Window
 function createMainWindow(){
@@ -52,8 +105,6 @@ function createMainWindow(){
     mainWindow.on('closed', function(){
         app.quit();
     });
-    //initiate getting SystemStat data
-    setTimeout(getSystemStats, 5000);
 }
 
 //Handle  create add window
@@ -77,24 +128,33 @@ function createAddWindow(){
 }
 //get system info
 function getSystemInfo(){
+    si.osInfo()
+        .then(data => {
+            mainWindow.webContents.send('systemInfoOs', data);
+            sysPlatform = data.platform;
+            sysPlatformArch = data.arch;
+        })
+        .catch(error => console.error(error)); 
+    
     si.cpu()
         .then(data => {
             mainWindow.webContents.send('systemInfoCpu', data);
         })
         .catch(error => console.error(error)); 
         
-    si.graphics()
-        .then(data => {
-            mainWindow.webContents.send('systemInfoGraphics', data);
-        })
-        .catch(error => console.error(error)); 
+    si.graphics(function(data){
+        mainWindow.webContents.send('systemInfoGraphics', data);
+        sysGpuVendor = data.controllers[0].vendor;
+        console.log('GPU = ' +sysGpuVendor);
+    });
+        
     
     si.networkInterfaces()
         .then(data => {  
             mainWindow.webContents.send('systemInfoNetworkInterfaces', data);
         })
         .catch(error => console.error(error)); 
-    
+        
 };
 
 function getSystemStats(){
@@ -118,14 +178,22 @@ ipcMain.on('mining', function(e, miningData){
     addWindow.close();
 });
 //Catch StartMining Btn
-ipcMain.on('startMining', function(e){
+ipcMain.on('startMining', function(e,miningData){
+    
+    console.log(miningData);
+    miningUser = miningData[0];
+    miningPool = miningData[1];
+    miningAlgo = miningData[2];
+    miningUserPw = miningData[3];
+
     console.log('startminging');
     //async with cmd output data
     var dataCallback = function(data) {
         console.log(data);
     };
     //runs ccminer through CMD
-    nrc.run(__dirname+'/miners/ccminer/ccminer-x64.exe'+miningAlgo+miningPool+miningUser,{ onData: dataCallback }, function(err,stderr) {
+    console.log(ccminerPath + ' -a '+ miningAlgo +' -o '+ miningPool + ' -u ' + miningUser + ' -p ' + miningUserPw);
+    nrc.run(ccminerPath+miningAlgo+miningPool+miningUser,{ onData: dataCallback }, function(err,stderr) {
         console.log('Command failed to run with error: ', err);
         console.log('Command failed to run with stderr: ', stderr);
     });

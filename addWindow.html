@@ -33,9 +33,10 @@
         function submitForm(e){
             e.preventDefault();
             var miningData = [  
-                document.querySelector('#miningUser').value,
-                document.querySelector('#miningPool').value,
-                document.querySelector('#miningAlgo').value
+                document.querySelector('#miningUser').value.toString(),
+                document.querySelector('#miningPool').value.toString(),
+                document.querySelector('#miningAlgo').value.toString()
+                document.querySelector('#miningUserPw').value.toString()
             ];
             ipcRenderer.send('mining', miningData);
         }
