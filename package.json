@@ -1,7 +1,7 @@
 {
   "name": "dallar-node",
   "version": "1.0.0",
-  "description": "",
+  "description": "Dallar mininer",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -11,6 +11,10 @@
   },
   "author": "Aaron Allar",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/swiftcurse/dallar-node.git"
+  },
   "dependencies": {
     "cross-unzip": "^0.2.1",
     "electron": "^1.7.10",

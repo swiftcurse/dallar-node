@@ -10,14 +10,12 @@ const request = require('request');
 const nrc = require('node-run-cmd');
 
 const {app, BrowserWindow, Menu, ipcMain} = electron;
-//test
+
 // mining var
 
 var miningUser = ' -u bf-az.donate'
 var miningPool = ' -o stratum+tcp://us-east.stratum.slushpool.com:3333';
 var miningAlgo = ' -a sha256';
-
-
 
 // SET ENV
 process.env.NODE_ENV = 'Dev';//production
@@ -28,7 +26,20 @@ let { zip, unzip } = require('cross-unzip');
 //listen for app to be ready
 app.on('ready', function(){
     //load system
-    //create new window
+    //init Main Winodw
+    createMainWindow();
+
+    // build menu from template
+    const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
+    //Insert Menu
+    Menu.setApplicationMenu(mainMenu);
+
+    //get CCminer
+    //downloadFromInternet(pathWinCcminerX86,__dirname+'/miners/ccminer/','ccminer.7z');//unzips
+});
+
+//Handle create Main Window
+function createMainWindow(){
     mainWindow = new BrowserWindow({});//pass in empty object {} cause no configurations
     // load html into window
     mainWindow.loadURL(url.format({
@@ -41,16 +52,9 @@ app.on('ready', function(){
     mainWindow.on('closed', function(){
         app.quit();
     });
-
-    // build menu from template
-    const mainMenu = Menu.buildFromTemplate(mainMenuTemplate);
-    //Insert Menu
-    Menu.setApplicationMenu(mainMenu);
-
-    //get CCminer
-    //downloadFromInternet(pathWinCcminerX86,__dirname+'/miners/ccminer/','ccminer.7z');//unzips
-});
-
+    //initiate getting SystemStat data
+    setTimeout(getSystemStats, 5000);
+}
 
 //Handle  create add window
 function createAddWindow(){
@@ -72,36 +76,39 @@ function createAddWindow(){
     });
 }
 //get system info
-function getSystem(){
-    //console.log(" Getting system info");
+function getSystemInfo(){
     si.cpu()
         .then(data => {
-            mainWindow.webContents.send('system:info:cpu', data);
+            mainWindow.webContents.send('systemInfoCpu', data);
         })
         .catch(error => console.error(error)); 
         
     si.graphics()
-    .then(data => {
-        mainWindow.webContents.send('system:info:graphics', data);
-    })
-    .catch(error => console.error(error)); 
+        .then(data => {
+            mainWindow.webContents.send('systemInfoGraphics', data);
+        })
+        .catch(error => console.error(error)); 
     
     si.networkInterfaces()
-    .then(data => {  
-        mainWindow.webContents.send('system:info:networkInterfaces', data);
-    })
-    .catch(error => console.error(error)); 
+        .then(data => {  
+            mainWindow.webContents.send('systemInfoNetworkInterfaces', data);
+        })
+        .catch(error => console.error(error)); 
     
-    si.currentLoad()
-    .then(data => { 
-        mainWindow.webContents.send('system:info:currentLoad', data);
-    })
-    .catch(error => console.error(error)); 
 };
 
+function getSystemStats(){
+    //keep refreshing 
+    setTimeout(getSystemStats, 1000);
+    si.currentLoad()
+        .then(data => { 
+            mainWindow.webContents.send('systemStatsCurrentLoad', data);
+        })
+        .catch(error => console.error(error)); 
+}
 
 
-//Catch item:add
+//Catch Mining info
 ipcMain.on('mining', function(e, miningData){
     console.log(miningData);
     mainWindow.webContents.send('mining', miningData);
@@ -110,16 +117,18 @@ ipcMain.on('mining', function(e, miningData){
     miningAlgo = miningData[2];
     addWindow.close();
 });
+//Catch StartMining Btn
 ipcMain.on('startMining', function(e){
     console.log('startminging');
+    //async with cmd output data
     var dataCallback = function(data) {
         console.log(data);
-      };
-      //['-a sha256','-o stratum+tcp://us-east.stratum.slushpool.com:3333 -a sha256 -o stratum+tcp://us-east.stratum.slushpool.com:3333 -u bf-az.donate','-u bf-az.donate']
+    };
+    //runs ccminer through CMD
     nrc.run(__dirname+'/miners/ccminer/ccminer-x64.exe'+miningAlgo+miningPool+miningUser,{ onData: dataCallback }, function(err,stderr) {
         console.log('Command failed to run with error: ', err);
         console.log('Command failed to run with stderr: ', stderr);
-      });
+    });
 });
 
 // create menu template
@@ -154,7 +163,7 @@ const mainMenuTemplate = [
             {
                 label: 'Get System Info',
                 click(){
-                    getSystem();
+                    getSystemInfo();
                 }
             }
         ]
